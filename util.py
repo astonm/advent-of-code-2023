@@ -26,6 +26,11 @@ try:
 except:
     raw_input = getattr(__builtins__, "input")
 
+try:
+    dist([0], [1])
+except:
+    dist = lambda p, q: sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+
 
 def p(*a, **k):
     return print(*a, **k)
@@ -99,35 +104,38 @@ class Grid:
         self.width = len(self.lines[0])
         self.height = len(self.lines)
 
-    def get(self, x, y, default=Throw):
-        if 0 <= x < self.width:
-            if 0 <= y < self.height:
-                return self.lines[y][x]
+    def get(self, p, default=Throw):
+        if 0 <= p[0] < self.width:
+            if 0 <= p[1] < self.height:
+                return self.lines[p[1]][p[0]]
         if default is Grid.Throw:
-            raise ValueError(f"Invalid position ({x}, {y})")
+            raise ValueError(f"Invalid position {p}")
         else:
             return default
 
-    def get_multi(self, xys, default=Throw):
-        return [self.get(x, y, default) for (x, y) in xys]
+    def get_multi(self, ps, default=Throw):
+        return [self.get(p, default) for p in ps]
 
-    def set(self, x, y, val):
-        self.lines[y][x] = val
+    def set(self, p, val):
+        self.lines[p[1]][p[0]] = val
 
-    def neighbors(self, x, y, diags=False):
+    def neighbors(self, p, diags=False):
         deltas = Grid.UDLR
         if diags:
             deltas = deltas + Grid.DIAGS
 
         out = []
         for (dx, dy) in deltas:
-            if 0 <= x + dx < self.width:
-                if 0 <= y + dy < self.height:
-                    out.append((x + dx, y + dy))
+            if 0 <= p[0] + dx < self.width:
+                if 0 <= p[1] + dy < self.height:
+                    out.append((p[0] + dx, p[1] + dy))
 
         return out
 
     def walk(self):
+        return zip(self.walk_coords(), self.walk_values())
+
+    def walk_values(self):
         # top to bottom, left to right
         for line in self.lines:
             for val in line:
