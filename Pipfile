@@ -8,6 +8,7 @@ click = "*"
 parse = "*"
 tqdm = "*"
 more-itertools = "*"
+requests = "*"
 
 [dev-packages]
 

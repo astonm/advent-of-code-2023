@@ -1,4 +1,7 @@
 from util import *
+import aoc
+
+submit = aoc.for_day()
 
 
 @click.group()
@@ -15,6 +18,7 @@ def process_line(line):
 def part1(input):
     data = [process_line(l) for l in read_file(input)]
     pprint(locals())
+    return submit.part(1, None)
 
 
 @cli.command()
@@ -22,6 +26,7 @@ def part1(input):
 def part2(input):
     data = [process_line(l) for l in read_file(input)]
     pprint(locals())
+    return submit.part(2, None)
 
 
 if __name__ == "__main__":
