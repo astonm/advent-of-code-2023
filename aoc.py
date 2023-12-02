@@ -7,7 +7,7 @@ import requests
 aoc_session = open(os.path.expanduser("~/.aoc.session")).read().strip()
 
 
-YEAR = 2018
+YEAR = 2023
 SUBMIT_URL = "https://adventofcode.com/{year}/day/{day}/answer"
 HEADERS = {
     "User-Agent": "aston's AoC submitter https://github.com/astonm",
