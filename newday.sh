@@ -7,6 +7,7 @@ fi
 
 if [ ! -f "$DAY/code.py" ]; then
     cp code.py "$DAY/code.py"
+    perl -pi -e "s/aoc.for_day\(\)/aoc.for_day\($1\)/" "$DAY/code.py"
 fi
 
 touch "$DAY/input.txt"
