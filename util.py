@@ -329,6 +329,10 @@ def softint(s, default=None):
     return softconv(s, int, default)
 
 
+def ints(s):
+    return [int(n) for n in re.findall(r"\d+", s)]
+
+
 def first(l, default=None):
     return next(iter(l), default)
 
