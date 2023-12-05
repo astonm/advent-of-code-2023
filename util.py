@@ -20,6 +20,8 @@ from queue import *
 import json
 from tqdm import tqdm
 from enum import Enum, IntEnum
+from varname import varname
+
 
 try:
     raw_input = __builtins__["input"]
@@ -368,6 +370,10 @@ def find_ind(l, f):
         if f(x):
             return i
     return -1
+
+
+def fancytuple(*a, **kw):
+    return namedtuple(varname(), *a, **kw)
 
 
 def time_it(f):

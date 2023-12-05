@@ -9,6 +9,7 @@ parse = "*"
 tqdm = "*"
 more-itertools = "*"
 requests = "*"
+varname = "*"
 
 [dev-packages]
 
