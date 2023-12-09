@@ -332,7 +332,7 @@ def softint(s, default=None):
 
 
 def ints(s):
-    return [int(n) for n in re.findall(r"\d+", s)]
+    return [int(n) for n in re.findall(r"-?\d+", s)]
 
 
 def first(l, default=None):
