@@ -128,21 +128,7 @@ def clear_non_loop_points(g, loop_points):
 
 
 def fill_outside_points(g):
-    # flood fill from outside to label the obvious
-    seen = set()
-    w, h = g.width - 1, g.height - 1
-    queue = [(0, 0), (w, 0), (0, h), (w, h)]
-    while queue:
-        p = queue.pop(0)
-        g.set(p, "O")
-
-        for d in [N, S, E, W]:
-            q = p[0] + d[0], p[1] + d[1]
-            if q not in seen and g.get(q, None) == ".":
-                seen.add(q)
-                queue.append(q)
-
-    # even-odd walk each row to get the sneaky outsides
+    # even-odd walk each row to get the sneaky outsides, too
     # see https://en.wikipedia.org/wiki/Point_in_polygon#Ray_casting_algorithm
     for y, line in enumerate(g.lines):
         n = s = 0
