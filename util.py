@@ -206,6 +206,9 @@ class GridN:
         return [range(mins[i], maxs[i] + 1) for i in range(self.dim)]
 
     def get(self, p):
+        if isinstance(p, list):
+            p = tuple(p)
+
         if p in self.g:
             return self.g[p]
 
@@ -218,9 +221,13 @@ class GridN:
         return [self.get(p) for p in ps]
 
     def set(self, p, val):
+        if isinstance(p, list):
+            p = tuple(p)
         self.g[p] = val
 
     def unset(self, p):
+        if isinstance(p, list):
+            p = tuple(p)
         del self.g[p]
 
     def neighbors(self, p, diags=False):
