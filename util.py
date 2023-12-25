@@ -302,17 +302,38 @@ class Vector(list):
     def __add__(self, other):
         return Vector([x.__add__(y) for (x, y) in self._broadcast(other)])
 
+    def __radd__(self, other):
+        return Vector([x.__radd__(y) for (x, y) in self._broadcast(other)])
+
     def __sub__(self, other):
         return Vector([x.__sub__(y) for (x, y) in self._broadcast(other)])
 
+    def __rsub__(self, other):
+        return Vector([x.__rsub__(y) for (x, y) in self._broadcast(other)])
+
     def __mul__(self, other):
         return Vector([x.__mul__(y) for (x, y) in self._broadcast(other)])
+
+    def __rmul__(self, other):
+        return Vector([x.__rmul__(y) for (x, y) in self._broadcast(other)])
 
     def __truediv__(self, other):
         return Vector([x.__truediv__(y) for (x, y) in self._broadcast(other)])
 
     def __floordiv__(self, other):
         return Vector([x.__floordiv__(y) for (x, y) in self._broadcast(other)])
+
+    def __pow__(self, other):
+        return Vector([x.__pow__(y) for (x, y) in self._broadcast(other)])
+
+    def __neg__(self):
+        return Vector(x.__neg__() for x in self)
+
+    def __pos__(self):
+        return Vector(x.__pos__() for x in self)
+
+    def __abs__(self):
+        return Vector(x.__abs__() for x in self)
 
     # default list operator overrides
 
