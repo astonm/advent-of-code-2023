@@ -10,6 +10,7 @@ tqdm = "*"
 more-itertools = "*"
 requests = "*"
 varname = "*"
+networkx = {extras = ["default"], version = "*"}
 
 [dev-packages]
 
