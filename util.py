@@ -404,6 +404,15 @@ def fancytuple(*a, **kw):
     return namedtuple(varname(), *a, **kw)
 
 
+def all_factors(n):
+    return set(
+        reduce(
+            list.__add__,
+            ([i, n // i] for i in range(1, int(n ** 0.5) + 1) if n % i == 0),
+        )
+    )
+
+
 def time_it(f):
     @wraps(f)
     def wrap(*args, **kw):

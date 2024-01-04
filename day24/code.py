@@ -39,75 +39,82 @@ def part1(input):
 
 @cli.command()
 @click.argument("input", type=click.File())
-def part2_example(input):
-    assert "ex" in input.name, "only works for the example input"
-    data = [process_line(l) for l in read_file(input)]
-
-    special, other = find_special_lines(
-        data, test=lines_parallel if "ex" in input.name else lines_intersect
-    )
-
-    plane = plane_from_lines(special[0], special[1])
-    p0 = intersect_plane_and_line(plane, other[0])
-    p1 = intersect_plane_and_line(plane, other[1])
-    rock_vel = p1 - p0
-
-    t = get_time_to(other[0], special[0], rock_vel)
-    collide_point = other[0][0] + t * other[0][1]
-    rock_pos = collide_point - t * rock_vel
-
-    print(sum(rock_pos))
-
-
-def xgcd(a, b):
-    prevx, x = 1, 0
-    prevy, y = 0, 1
-    while b:
-        q = a // b
-        x, prevx = prevx - q * x, x
-        y, prevy = prevy - q * y, y
-        a, b = b, a % b
-    return a, prevx, prevy
-
-
-def round_int(n):
-    if abs(n - int(round(n))) < 1e-8:
-        return int(round(n))
-    return n
-
-
-def vector_mag(v):
-    return abs(v[0]) + abs(v[1]) + abs(v[2])
-
-
-@cli.command()
-@click.argument("input", type=click.File())
 def part2(input):
     data = [process_line(l) for l in read_file(input)]
 
-    vmax = 5
-    for rock_vel in tqdm(
-        sorted(product(range(-vmax, vmax + 1), repeat=3), key=vector_mag)
-    ):
-        if rock_vel == (0, 0, 0):
-            continue
+    # p1 + v1 * t1 = rock_pos + t1 * rock_vel
+    # p0 + v0 * t0 = rock_pos + t0 * rock_vel
+    # in the case where v0 == v1 == v
+    # (p1 - p0) = (rock_vel - v) * (t1 - t0), thus
+    # the velocity difference and the time difference are factors of the point distance
 
+    # to start, group by velocity and dimenstion (vx, vy, vz)
+    by_vel = defaultdict(lambda: defaultdict(list))
+    for p, v in data:
+        for dim in range(3):
+            by_vel[dim][v[dim]].append(p[dim])
+
+    for dim in range(3):
+        for k, v in by_vel[dim].copy().items():
+            if len(v) < 2:
+                del by_vel[dim][k]
+
+    # then intersect all possible options for velocity together to winnow
+    vel_options = {}
+    for dim in range(3):
+        for vel, hailstones in by_vel[dim].items():
+            for p0, p1 in combinations(hailstones, 2):
+                factors = all_factors(abs(p1 - p0))
+
+                # from above, rock_vel = some_factor + v
+                # negative and positive factors are valid
+                options = {f + vel for f in factors} | {-f + vel for f in factors}
+                options -= {0}  # zero isn't
+
+                if dim not in vel_options:
+                    vel_options[dim] = options
+                else:
+                    vel_options[dim] &= options
+            if len(vel_options[dim]) == 1:
+                break
+
+    # there may be more than one possibility, still, though in my input i just had one
+    for rock_vel in product(vel_options[0], vel_options[1], vel_options[2]):
+        rock_vel = Vector(rock_vel)
+
+        # insert razzle dazzle linear algebra...
+        # i worked this out from a similar equation as above, but not assuming v1 == v0
+        # t0 * (rock_vel - v0) + t1 * (v1 - rock_vel) == (p0 - p1)
+        # and then i generalized to solve for all of the t's at the same time
+        # i could have probably done all of the dimensions together using vectors
+        # but instead i did them separately because it was easier for me to figure out
         pdiffs = []
         vcoeffs = []
         for (i, h0), (j, h1) in pairwise(enumerate(data)):
             for dim in range(3):
                 pdiffs.append([h0[0][dim] - h1[0][dim]])
 
-                vc = [0] * 5
+                vc = [0] * len(data)
                 vc[i] = rock_vel[dim] - h0[1][dim]
                 vc[j] = h1[1][dim] - rock_vel[dim]
                 vcoeffs.append(vc)
 
-        res = numpy.linalg.lstsq(vcoeffs, pdiffs, rcond=None)[0]
-        ts = [round_int(val[0]) for val in res]
+        res = numpy.linalg.lstsq(vcoeffs, pdiffs, rcond=None)
 
-        if all(type(x) is int for x in ts) and any(x > 0 for x in ts):
-            print(rock_vel, ts)
+        # the least squares solution isn't exact, but is close
+        def round_int(n):
+            if abs(n - int(round(n))) < 0.02:
+                return int(round(n))
+            else:
+                return n
+
+        ts = [round_int(val[0]) for val in res[0]]
+        if all(type(x) is int for x in ts):
+            p0, v0 = data[0]
+            intersect0 = p0 + ts[0] * v0
+            rock_pos = intersect0 - ts[0] * rock_vel
+            print(rock_vel, rock_pos)
+            return submit.part(2, sum(rock_pos))
 
 
 def intersection_xy(hail1, hail2):
@@ -125,88 +132,6 @@ def intersection_xy(hail1, hail2):
     py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
 
     return px, py
-
-
-def dotp(a, b):
-    return sum(a * b)
-
-
-def crossp(a, b):
-    # https://en.wikipedia.org/wiki/Cross_product#Computing
-    return Vector(
-        [
-            a[1] * b[2] - a[2] * b[1],
-            a[2] * b[0] - a[0] * b[2],
-            a[0] * b[1] - a[1] * b[0],
-        ]
-    )
-
-
-def find_special_lines(lines, test):
-    special_inds = set()
-    for i, l1 in enumerate(lines):
-        for j, l2 in enumerate(lines):
-            if i != j:
-                if test(l1, l2):
-                    special_inds.add(i)
-
-    special = [l for i, l in enumerate(lines) if i in special_inds]
-    other = [l for i, l in enumerate(lines) if i not in special_inds]
-
-    return special, other
-
-
-def zero(v):
-    return all(x == 0 for x in v)
-
-
-def lines_parallel(l1, l2):
-    return zero(crossp(l1[1], l2[1]))
-
-
-def lines_intersect(l1, l2):
-    # https://math.stackexchange.com/a/697278
-    return dotp(l1[0] - l2[0], crossp(l1[1], l2[1])) == 0
-
-
-def plane_from_parallel_lines(l1, l2):
-    p1, p2 = l1[0], l1[0] + l1[1]
-    p3 = l2[0]
-
-    normal = crossp((p2 - p1), (p3 - p1))
-    return p1, normal
-
-
-def plane_from_intersecting_lines(l1, l2):
-    return l[1][0], crossp(l1[1], l2[1])
-
-
-def plane_from_lines(l1, l2):
-    if lines_parallel(l1, l2):
-        return plane_from_parallel_lines(l1, l2)
-    if lines_intersect(l1, l2):
-        return plane_from_intersecting_lines(l1, l2)
-    return None
-
-
-def intersect_plane_and_line(plane, line):
-    # https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection#Algebraic_form
-    denom = dotp(line[1], plane[1])
-    if not denom:
-        return None
-    t = int(dotp(plane[0] - line[0], plane[1]) / denom)
-    return line[0] + t * line[1]
-
-
-def get_time_to(target, comparison, u):
-    # derivation was a real pain...
-    x1, v1 = target
-    x2, v2 = comparison
-    t = (x2[0] - x1[0]) + (x1[1] - x2[1]) * (v2[0] - u[0]) / (v2[1] - u[1]) / (
-        (v1[0] - u[0]) - (v1[1] - u[1]) * (v2[0] - u[0]) / (v2[1] - u[1])
-    )
-    assert t == int(t)
-    return int(t)
 
 
 if __name__ == "__main__":
